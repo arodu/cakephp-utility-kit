@@ -36,10 +36,6 @@ class FieldScopeBehavior extends Behavior
         if (empty($this->getConfig('fieldName'))) {
             throw new RuntimeException('FieldScopeBehavior: "fieldName" must be configured');
         }
-
-        if (empty($this->getConfig('fieldValue'))) {
-            throw new RuntimeException('FieldScopeBehavior: "fieldValue" must be configured');
-        }
     }
 
     /**
