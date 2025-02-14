@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BootstrapTools\Http;
+namespace UtilityKit\Http;
 
 use Cake\Http\Response;
 use Cake\Log\Log;
