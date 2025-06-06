@@ -25,7 +25,7 @@ class AjaxResponseComponent extends Component
      */
     protected array $_defaultConfig = [
         'strategy' => self::STRATEGY_HTML,
-        'ajaxClassNames' => 'Ajax',
+        'ajaxClassName' => 'Ajax',
         'modalSuccessKey' => 'X-Ajax-Success',
     ];
 
@@ -44,7 +44,7 @@ class AjaxResponseComponent extends Component
     {
         $controller = $this->getController();
         if ($controller->getRequest()->is('ajax')) {
-            $controller->viewBuilder()->setClassName($this->getConfig('ajaxClassNames'));
+            $controller->viewBuilder()->setClassName($this->getConfig('ajaxClassName'));
         }
     }
 
