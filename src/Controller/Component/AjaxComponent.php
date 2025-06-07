@@ -42,7 +42,7 @@ class AjaxComponent extends Component
                 'html' => 'html',
                 'messages' => 'messages',
                 'redirectUrl' => 'url',
-                'action' => 'action',
+                'action' => '_action',
             ],
         ],
 
@@ -189,6 +189,8 @@ class AjaxComponent extends Component
         if (!empty($flashMessages)) {
             $data[$this->getField('messages')] = $flashMessages;
         }
+
+        $data = Hash::merge($data, $this->getJsonData());
 
         $response = $this->buildJsonResponse([
             'status' => self::STATUS_SUCCESS,
