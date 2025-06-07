@@ -26,6 +26,10 @@ class AjaxComponent extends Component
     public const STATUS_FAIL = 'fail';
     public const STATUS_ERROR = 'error';
 
+    public const ACTION_REDIRECT = 'redirect';
+    public const ACTION_RENDER_HTML = 'renderHtml';
+    public const ACTION_RENDER_JSON = 'renderJson';
+
     protected array $_defaultConfig = [
         'strategy' => self::STRATEGY_HTML,
         'excludedActions' => [], // actions that do not require AJAX requests, even if strategy is HTML
@@ -37,12 +41,16 @@ class AjaxComponent extends Component
             'field' => [
                 'html' => 'html',
                 'messages' => 'messages',
-                'redirectUrl' => 'redirectUrl',
+                'redirectUrl' => 'url',
+                'action' => 'action',
             ],
         ],
 
         'ajaxRequired' => true, // if true, all actions except those in excludedActions must be AJAX requests
+        'flashKey' => 'flash', // key used for flash messages in the session
     ];
+
+    protected bool $_bypassBeforeFilter = false;
 
     /**
      * @inheritDoc
@@ -69,6 +77,10 @@ class AjaxComponent extends Component
      */
     public function afterFilter(EventInterface $event): void
     {
+        if ($this->_bypassBeforeFilter) {
+            return;
+        }
+
         $action = $this->getController()->getRequest()->getParam('action');
         $excludedActions = $this->getConfig('excludedActions', []);
 
@@ -92,9 +104,9 @@ class AjaxComponent extends Component
     public function handleJsonWithHtml(EventInterface $event): void
     {
         $controller = $this->getController();
-        $htmlField = $this->getConfig('jsonOptions.field.html', 'html');
 
-        $data[$htmlField] = (string) $controller->render()->getBody();
+        $data[$this->getField('action')] = self::ACTION_RENDER_HTML;
+        $data[$this->getField('html')] = (string) $controller->render()->getBody();
         $data = Hash::merge($data, $this->getJsonData());
 
         $response = $this->buildJsonResponse([
@@ -136,6 +148,7 @@ class AjaxComponent extends Component
     {
         return $this->jsonData ?? [];
     }
+
     /**
      * Build a JSON response with the given data and status code.
      *
@@ -153,50 +166,66 @@ class AjaxComponent extends Component
             ->withStatus($status);
     }
 
-    // ---------------------------------------
+    /**
+     * @param EventInterface $event
+     * @param mixed $url
+     * @param Response $response
+     * @return void
+     */
+    public function beforeRedirect(EventInterface $event, $url, Response $response)
+    {
+        if ($this->getConfig('strategy') !== self::STRATEGY_JSON) {
+            return null;
+        }
 
+        $controller = $this->getController();
+        $normalizedUrl = Router::url($url, true);
+
+        $data = [];
+        $data[$this->getField('action')] = self::ACTION_REDIRECT;
+        $data[$this->getField('redirectUrl')] = $normalizedUrl;
+
+        $flashMessages = $this->getFormattedFlashMessages($controller->getRequest()->getSession());
+        if (!empty($flashMessages)) {
+            $data[$this->getField('messages')] = $flashMessages;
+        }
+
+        $response = $this->buildJsonResponse([
+            'status' => self::STATUS_SUCCESS,
+            'data' => $data,
+        ], 200);
+
+        $event->stopPropagation();
+        $event->setResult($response);
+        $this->_bypassBeforeFilter = true;
+
+        return $response;
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     */
+    protected function getField(string $key): string
+    {
+        $fieldConfig = $this->getConfig('jsonOptions.field', []);
+
+        return (string)($fieldConfig[$key] ?? $key);
+    }
+
+    /**
+     * @param \Cake\Http\Session $session
+     * @return array
+     */
     protected function getFormattedFlashMessages(\Cake\Http\Session $session): array
     {
-        // ... (sin cambios respecto a la versión anterior)
-        $rawFlashMessages = (array)$session->read('Flash');
+        $flashMessages = (array)$session->read('Flash.' . $this->getConfig('flashKey', 'flash'));
         $session->delete('Flash');
-        $formattedMessages = [];
-        if (!empty($rawFlashMessages)) {
-            foreach ($rawFlashMessages as $flashKey => $flashMessageArray) {
-                if (isset($flashMessageArray['message'], $flashMessageArray['element'])) {
-                    $elementType = $flashMessageArray['element'];
-                    if (str_starts_with($elementType, 'Flash/')) {
-                        $elementType = substr($elementType, strlen('Flash/'));
-                    }
-                    $formattedMessages[] = [
-                        'text' => $flashMessageArray['message'],
-                        'type' => $elementType,
-                        'key' => $flashKey,
-                    ];
-                }
-            }
-        }
-        return $formattedMessages;
+
+        return $flashMessages;
     }
 
-    public function handleRequest(EventInterface $event): void
-    {
-        // ... (sin cambios para la lógica de estrategia 'Html')
-        $controller = $this->getController();
-        $request = $controller->getRequest();
-        $action = $request->getParam('action');
-        $strategy = $this->getConfig('strategy');
-        $excludedActions = (array)$this->getConfig('excludedActions');
-
-        if ($strategy === self::STRATEGY_HTML) {
-            if (!$request->is('ajax') && !in_array($action, $excludedActions, true)) {
-                throw new BadRequestException(__('This action requires an AJAX request.'));
-            }
-            if ($request->is('ajax')) {
-                $controller->viewBuilder()->setClassName($this->getConfig('ajaxClassName'));
-            }
-        }
-    }
+    // ---------------------------------------
 
     public function handleJson(EventInterface $event): void
     {
@@ -296,42 +325,5 @@ class AjaxComponent extends Component
             ->withStringBody((string)json_encode($finalResponse))
             ->withStatus(200); // HTTP 200 para que el cliente JS procese el JSend
         $event->setResult($response);
-    }
-
-
-    public function handleRedirect(EventInterface $event, $url, \Cake\Http\Response $response)
-    {
-        if ($this->getConfig('strategy') !== self::STRATEGY_JSON) {
-            return null;
-        }
-
-        $controller = $this->getController();
-        $normalizedUrl = Router::url($url, true);
-        $flashMessages = $this->getFormattedFlashMessages($controller->getRequest()->getSession());
-
-        $jsendDataPayload = []; // Datos para el JSend 'data'
-
-        $jsonRedirectUrlField = (string)$this->getConfig('jsonRedirectUrlField');
-        $jsendDataPayload[$jsonRedirectUrlField] = $normalizedUrl;
-
-        $jsonMessagesField = (string)$this->getConfig('jsonMessagesField');
-        if (!empty($flashMessages)) {
-            $jsendDataPayload[$jsonMessagesField] = $flashMessages;
-        }
-        // Opcional: podrías añadir una clave para indicar explícitamente la acción de redirección
-        // $jsendDataPayload['_action'] = 'redirect';
-
-        $finalResponse = [
-            'status' => 'success', // Una redirección es un tipo de "éxito"
-            'data' => $jsendDataPayload,
-        ];
-
-        $event->stopPropagation();
-        $event->setResult($response);
-
-        return $controller->getResponse()
-            ->withType('application/json')
-            ->withStringBody((string)json_encode($finalResponse))
-            ->withStatus(200); // HTTP 200 para que el cliente JS procese el JSend
     }
 }
