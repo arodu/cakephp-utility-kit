@@ -9,7 +9,14 @@ use Cake\Event\EventInterface;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
 use Cake\Routing\Router;
+use Cake\Utility\Hash;
 
+/**
+ * AjaxComponent component
+ *
+ * This component provides functionality for handling AJAX requests and responses in CakePHP applications.
+ * It supports both HTML and JSON strategies for AJAX responses, allowing for flexible handling of AJAX requests.
+ */
 class AjaxComponent extends Component
 {
     public const STRATEGY_HTML = 'html';
@@ -24,10 +31,10 @@ class AjaxComponent extends Component
         'excludedActions' => [], // actions that do not require AJAX requests, even if strategy is HTML
         'ajaxClassName' => 'Ajax', // name of the AJAX view class to use
 
-        'jsonOptions' => [ // fields to include in the JSON response
+        'jsonOptions' => [
             'renderHtml' => true, // if true, the rendered HTML view will be included in the response
-            'serializeAll' => false, // if true, all view variables will be serialized
-            'fields' => [
+            'serializeAll' => false, // if true, all viewVars will be serialized in the JSON response
+            'field' => [
                 'html' => 'html',
                 'messages' => 'messages',
                 'redirectUrl' => 'redirectUrl',
@@ -37,6 +44,9 @@ class AjaxComponent extends Component
         'ajaxRequired' => true, // if true, all actions except those in excludedActions must be AJAX requests
     ];
 
+    /**
+     * @inheritDoc
+     */
     public function beforeFilter(EventInterface $event): void
     {
         $controller = $this->getController();
@@ -54,6 +64,9 @@ class AjaxComponent extends Component
         $controller->viewBuilder()->setClassName($this->getConfig('ajaxClassName'));
     }
 
+    /**
+     * @inheritDoc
+     */
     public function afterFilter(EventInterface $event): void
     {
         $action = $this->getController()->getRequest()->getParam('action');
@@ -71,6 +84,76 @@ class AjaxComponent extends Component
             }
         }
     }
+
+    /**
+     * @param EventInterface $event
+     * @return void
+     */
+    public function handleJsonWithHtml(EventInterface $event): void
+    {
+        $controller = $this->getController();
+        $htmlField = $this->getConfig('jsonOptions.field.html', 'html');
+
+        $data[$htmlField] = (string) $controller->render()->getBody();
+        $data = Hash::merge($data, $this->getJsonData());
+
+        $response = $this->buildJsonResponse([
+            'status' => self::STATUS_SUCCESS,
+            'data' => $data,
+        ], 200);
+
+        $event->setResult($response);
+    }
+
+    protected array $jsonData = [];
+
+    /**
+     * Set additional JSON data to be included in the response.
+     * NOTE: this method only works if the strategy is set to JSON.
+     *
+     * @param array $data The data to be included in the JSON response.
+     * @param bool $overwrite If true, the existing JSON data will be overwritten. If false, the new data will be merged with the existing data.
+     * @return self
+     */
+    public function setJsonData(array $data, bool $overwrite = false): self
+    {
+        if ($overwrite) {
+            $this->jsonData = $data;
+        } else {
+            $this->jsonData = Hash::merge($this->jsonData, $data);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get the JSON data that will be included in the response.
+     * NOTE: this method only works if the strategy is set to JSON.
+     *
+     * @return array The JSON data to be included in the response.
+     */
+    public function getJsonData(): array
+    {
+        return $this->jsonData ?? [];
+    }
+    /**
+     * Build a JSON response with the given data and status code.
+     *
+     * @param array $data The data to be included in the JSON response.
+     * @param int $status The HTTP status code for the response.
+     * @return Response The JSON response.
+     */
+    protected function buildJsonResponse(array $data, int $status = 200): Response
+    {
+        $response = $this->getController()->getResponse();
+
+        return $response
+            ->withType('application/json')
+            ->withStringBody(json_encode($data, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP))
+            ->withStatus($status);
+    }
+
+    // ---------------------------------------
 
     protected function getFormattedFlashMessages(\Cake\Http\Session $session): array
     {
@@ -215,19 +298,6 @@ class AjaxComponent extends Component
         $event->setResult($response);
     }
 
-    public function handleJsonWithHtml(EventInterface $event): void
-    {
-        $controller = $this->getController();
-        $htmlField = $this->getConfig('jsonOptions.fields.html', 'html');
-        $data[$htmlField] = (string) $controller->render()->getBody();
-
-        $response = $this->buildJsonResponse([
-            'status' => self::STATUS_SUCCESS,
-            'data' => $data,
-        ], 200);
-
-        $event->setResult($response);
-    }
 
     public function handleRedirect(EventInterface $event, $url, \Cake\Http\Response $response)
     {
@@ -263,15 +333,5 @@ class AjaxComponent extends Component
             ->withType('application/json')
             ->withStringBody((string)json_encode($finalResponse))
             ->withStatus(200); // HTTP 200 para que el cliente JS procese el JSend
-    }
-
-    protected function buildJsonResponse(array $data, int $status = 200): Response
-    {
-        $response = $this->getController()->getResponse();
-
-        return $response
-            ->withType('application/json')
-            ->withStringBody(json_encode($data, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP))
-            ->withStatus($status);
     }
 }
