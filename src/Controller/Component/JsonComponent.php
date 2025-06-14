@@ -62,7 +62,6 @@ class JsonComponent extends Component
         return $response;
     }
 
-
     /**
      * @inheritDoc
      */
