@@ -33,11 +33,11 @@ class JsonComponent extends Component
 
     protected bool $_isSuccess = true;
 
-    protected ?bool $_renderViewOverride = null;
-
     protected bool $_responseStopped = false;
 
     protected array $jsonData = [];
+
+    protected ?bool $_renderViewOverride = null;
 
     public function beforeFilter(EventInterface $event): void
     {
