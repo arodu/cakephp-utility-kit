@@ -31,11 +31,14 @@ class JsonComponent extends Component
         'messagesField' => 'messages',
     ];
 
+    protected bool $_isSuccess = true;
+
+    protected ?bool $_renderViewOverride = null;
+
     protected bool $_responseStopped = false;
 
     protected array $jsonData = [];
 
-    // beforeFilter y beforeRedirect sin cambios...
     public function beforeFilter(EventInterface $event): void
     {
         if (!$this->_isActionHandled()) {
@@ -50,22 +53,20 @@ class JsonComponent extends Component
         $controller->disableAutoRender();
     }
 
-    public function beforeRedirect(EventInterface $event, $url, Response $response): ?Response
+    public function beforeRedirect(EventInterface $event, $url, Response $response): void
     {
         if (!$this->_isActionHandled() || $this->_responseStopped) {
-            return null;
+            return;
         }
         $response = $this->redirect(Router::url($url, true));
         $event->stopPropagation();
         $event->setResult($response);
-
-        return $response;
     }
 
     /**
      * @inheritDoc
      */
-    public function afterFilter(EventInterface $event)
+    public function afterFilter(EventInterface $event): void
     {
         if (!$this->_isActionHandled() || $this->_responseStopped) {
             return;
@@ -84,24 +85,38 @@ class JsonComponent extends Component
             }
         }
 
-        $jsendStatus = self::STATUS_SUCCESS;
-        if (isset($payloadData['success'])) {
-            $jsendStatus = $payloadData['success'] === true ? self::STATUS_SUCCESS : self::STATUS_FAIL;
-            unset($payloadData['success']);
-        }
-
-        $response = ($jsendStatus === self::STATUS_FAIL)
-            ? $this->fail($payloadData)
-            : $this->success($payloadData);
+        $response = $this->_isSuccess
+            ? $this->success($payloadData)
+            : $this->fail($payloadData);
 
         $event->setResult($response);
-
-        return $response;
     }
 
     public function setData(array $data, bool $overwrite = false): self
     {
         $this->jsonData = $overwrite ? $data : Hash::merge($this->jsonData, $data);
+
+        return $this;
+    }
+
+    /**
+     * @param bool $isSuccess `true` para JSend::STATUS_SUCCESS, `false` para JSend::STATUS_FAIL.
+     * @return $this
+     */
+    public function setSuccess(bool $isSuccess): self
+    {
+        $this->_isSuccess = $isSuccess;
+
+        return $this;
+    }
+
+    /**
+     * @param bool $enable Define si se debe renderizar la vista.
+     * @return $this
+     */
+    public function withView(bool $enable = true): self
+    {
+        $this->_renderViewOverride = $enable;
 
         return $this;
     }
@@ -126,13 +141,9 @@ class JsonComponent extends Component
     }
 
     /**
-     * Devuelve una respuesta JSend de error desde una Exception/Throwable o un string.
-     *
-     * MEJORADO: Ahora acepta un objeto Throwable para una gestión de errores más sencilla.
-     *
-     * @param string|\Throwable $source La Exception/Throwable o un string con el mensaje de error.
-     * @param array|null $data Datos adicionales opcionales sobre el error.
-     * @param int|null $httpStatusCode El código HTTP. Si es null, se infiere de la excepción o se usa 500.
+     * @param string|\Throwable $source
+     * @param array|null $data
+     * @param int|null $httpStatusCode
      * @return \Cake\Http\Response
      */
     public function error(string|Throwable $source, ?array $data = null, ?int $httpStatusCode = null): Response
@@ -146,7 +157,6 @@ class JsonComponent extends Component
             $errorCode = $source->getCode();
 
             if ($httpStatusCode === null) {
-                // Usar el código de la excepción si es un código de error HTTP válido, si no, 500.
                 $httpStatusCode = ($errorCode >= 400 && $errorCode < 600) ? $errorCode : 500;
             }
 
@@ -161,12 +171,11 @@ class JsonComponent extends Component
             }
         } else {
             $message = $source;
-            $httpStatusCode ??= 500; // Si es null, asigna 500
+            $httpStatusCode ??= 500;
         }
 
         $payload = ['message' => $message];
 
-        // Fusionar datos pasados y datos de debug
         $finalData = array_merge($data ?? [], $debugInfo);
         if (!empty($finalData)) {
             $payload['data'] = $finalData;
@@ -179,7 +188,12 @@ class JsonComponent extends Component
     {
         $payload = $this->_buildPayload(['redirect' => Router::url($url, true)], $message);
 
-        return $this->_buildResponse(self::STATUS_SUCCESS, $payload, 200);
+        return $this->_buildResponse(
+            status: self::STATUS_SUCCESS,
+            payload: $payload,
+            httpStatusCode: 200,
+            renderView: false
+        );
     }
 
     // --- MÉTODOS PROTEGIDOS (HELPERS) ---
@@ -204,7 +218,7 @@ class JsonComponent extends Component
         return $data;
     }
 
-    protected function _buildResponse(string $status, array $payload, int $httpStatusCode): Response
+    protected function _buildResponse(string $status, array $payload, int $httpStatusCode, ?bool $renderView = null): Response
     {
         $this->_responseStopped = true;
         $jsend = ['status' => $status];
@@ -217,9 +231,13 @@ class JsonComponent extends Component
 
         $jsend['data'] = Hash::merge($jsend['data'] ?? [], $this->getJsonData());
 
-        if ($this->getConfig('renderView')) {
+        $shouldRenderView = $this->_renderViewOverride ?? $renderView ?? $this->getConfig('renderView');
+
+        if ($shouldRenderView) {
             $jsend['data'][$this->getConfig('htmlField')] = (string) $this->getController()->render()->getBody();
         }
+
+        $this->_renderViewOverride = null;
 
         return $this->_buildJsonResponse($jsend, $httpStatusCode);
     }
