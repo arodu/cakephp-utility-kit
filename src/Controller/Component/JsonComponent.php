@@ -22,6 +22,9 @@ class JsonComponent extends Component
     public const STATUS_FAIL = 'fail';
     public const STATUS_ERROR = 'error';
 
+    /**
+     * @var array
+     */
     protected array $_defaultConfig = [
         'actions' => [],
         'ajaxRequired' => true,
@@ -31,12 +34,24 @@ class JsonComponent extends Component
         'messagesField' => 'messages',
     ];
 
+    /**
+     * @var boolean
+     */
     protected bool $_isSuccess = true;
 
+    /**
+     * @var boolean
+     */
     protected bool $_responseStopped = false;
 
+    /**
+     * @var array
+     */
     protected array $jsonData = [];
 
+    /**
+     * @var boolean|null
+     */
     protected ?bool $_renderViewOverride = null;
 
     public function beforeFilter(EventInterface $event): void
@@ -85,13 +100,16 @@ class JsonComponent extends Component
             }
         }
 
-        $response = $this->_isSuccess
-            ? $this->success($payloadData)
-            : $this->fail($payloadData);
+        $response = $this->buildResponse($this->_isSuccess, $payloadData);
 
         $event->setResult($response);
     }
 
+    /**
+     * @param array $data
+     * @param boolean $overwrite
+     * @return self
+     */
     public function setData(array $data, bool $overwrite = false): self
     {
         $this->jsonData = $overwrite ? $data : Hash::merge($this->jsonData, $data);
@@ -101,7 +119,7 @@ class JsonComponent extends Component
 
     /**
      * @param bool $isSuccess `true` para JSend::STATUS_SUCCESS, `false` para JSend::STATUS_FAIL.
-     * @return $this
+     * @return self
      */
     public function setSuccess(bool $isSuccess): self
     {
@@ -112,7 +130,7 @@ class JsonComponent extends Component
 
     /**
      * @param bool $enable Define si se debe renderizar la vista.
-     * @return $this
+     * @return self
      */
     public function withView(bool $enable = true): self
     {
@@ -128,16 +146,23 @@ class JsonComponent extends Component
 
     public function success(array $data = [], ?string $message = null): Response
     {
-        $payload = $this->_buildPayload($data, $message);
-
-        return $this->_buildResponse(self::STATUS_SUCCESS, $payload, 200);
+        return $this->buildResponse(true, $data, $message);
     }
 
     public function fail(array $data = [], ?string $message = null, int $httpStatusCode = 400): Response
     {
+        return $this->buildResponse(false, $data, $message, $httpStatusCode);
+    }
+
+    public function buildResponse(bool $isSuccess, array $data = [], ?string $message = null, ?int $httpStatusCode = null): Response
+    {
+        $status = $isSuccess ? self::STATUS_SUCCESS : self::STATUS_FAIL;
+
+        $finalHttpStatusCode = $httpStatusCode ?? ($isSuccess ? 200 : 400);
+
         $payload = $this->_buildPayload($data, $message);
 
-        return $this->_buildResponse(self::STATUS_FAIL, $payload, $httpStatusCode);
+        return $this->_createJsendResponse($status, $payload, $finalHttpStatusCode);
     }
 
     /**
@@ -181,23 +206,20 @@ class JsonComponent extends Component
             $payload['data'] = $finalData;
         }
 
-        return $this->_buildResponse(self::STATUS_ERROR, $payload, $httpStatusCode);
+        return $this->_createJsendResponse(self::STATUS_ERROR, $payload, $httpStatusCode);
     }
 
     public function redirect($url, ?string $message = null): Response
     {
         $payload = $this->_buildPayload(['redirect' => Router::url($url, true)], $message);
 
-        return $this->_buildResponse(
+        return $this->_createJsendResponse(
             status: self::STATUS_SUCCESS,
             payload: $payload,
             httpStatusCode: 200,
             renderView: false
         );
     }
-
-    // --- MÉTODOS PROTEGIDOS (HELPERS) ---
-    // (Sin cambios en _buildPayload, _buildResponse, _buildJsonResponse, _getFormattedFlashMessages)
 
     protected function _buildPayload(array $data, ?string $message): array
     {
@@ -218,7 +240,7 @@ class JsonComponent extends Component
         return $data;
     }
 
-    protected function _buildResponse(string $status, array $payload, int $httpStatusCode, ?bool $renderView = null): Response
+    protected function _createJsendResponse(string $status, array $payload, int $httpStatusCode, ?bool $renderView = null): Response
     {
         $this->_responseStopped = true;
         $jsend = ['status' => $status];
@@ -232,11 +254,9 @@ class JsonComponent extends Component
         $jsend['data'] = Hash::merge($jsend['data'] ?? [], $this->getJsonData());
 
         $shouldRenderView = $this->_renderViewOverride ?? $renderView ?? $this->getConfig('renderView');
-
         if ($shouldRenderView) {
             $jsend['data'][$this->getConfig('htmlField')] = (string) $this->getController()->render()->getBody();
         }
-
         $this->_renderViewOverride = null;
 
         return $this->_buildJsonResponse($jsend, $httpStatusCode);
