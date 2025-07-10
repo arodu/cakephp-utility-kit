@@ -118,6 +118,44 @@ class JsonComponent extends Component
     }
 
     /**
+     * @param int $code
+     * @return self
+     * @throws \Cake\Http\Exception\BadRequestException
+     */
+    public function setCode(int $code): self
+    {
+        if ($code < 100 || $code >= 600) {
+            throw new BadRequestException('Invalid HTTP status code provided.');
+        }
+
+        $this->getController()->getResponse()->withStatus($code);
+
+        return $this;
+    }
+
+    /**
+     * @param string $message
+     * @return self
+     */
+    public function setMessage(string $message): self
+    {
+        $this->jsonData['message'] = $message;
+
+        return $this;
+    }
+
+    /**
+     * @param array $meta
+     * @return self
+     */
+    public function setMeta(array $meta): self
+    {
+        $this->jsonData['meta'] = $meta;
+
+        return $this;
+    }
+
+    /**
      * @param bool $isSuccess `true` para JSend::STATUS_SUCCESS, `false` para JSend::STATUS_FAIL.
      * @return self
      */

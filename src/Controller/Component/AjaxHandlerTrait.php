@@ -19,14 +19,19 @@ trait AjaxHandlerTrait
      *
      * The component will process the action if the 'actions' config is empty,
      * or if the current action is present in the 'actions' config array.
+     * If the 'actions' config is set to '*' or contains '*', it will handle all actions.
      *
      * @return bool True if the action should be handled, false otherwise.
      */
     protected function _isActionHandled(): bool
     {
-        $handledActions = (array)$this->getConfig('actions', []);
+        $handledActions = $this->getConfig('actions', null);
+
         if (empty($handledActions)) {
-            // If the 'actions' array is empty, handle all actions by default.
+            return false;
+        }
+
+        if ($handledActions === '*' || in_array('*', $handledActions, true)) {
             return true;
         }
 
