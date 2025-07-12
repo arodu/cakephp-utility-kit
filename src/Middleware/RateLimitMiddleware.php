@@ -54,13 +54,27 @@ class RateLimitMiddleware implements MiddlewareInterface
     protected int $period;
 
     /**
-     * @param array $options
+     * Cache configuration to use.
+     *
+     * @var string
+     */
+    protected string $cache;
+
+    /**
+     *  Constructor.
+     * 
+     * @param array $options Options for the rate limit.
+     * * Options can include:
+     * * - `limit`: Maximum number of requests allowed (default is 1000).
+     * * - `period`: Time period in seconds for the rate limit (default is 3600 seconds, or 1 hour).
+     * * - `cache`: Cache configuration to use (default is 'default').
      */
     public function __construct(array $options = [])
     {
         $config = Configure::read('RateLimit');
         $this->limit = $options['limit'] ?? $config['limit'] ?? 1000;
         $this->period = $options['period'] ?? $config['period'] ?? 3600; // Default to 1 hour
+        $this->cache = $options['cache'] ?? $config['cache'] ?? 'default';
     }
 
     /**
@@ -76,8 +90,7 @@ class RateLimitMiddleware implements MiddlewareInterface
         $clientIp = $request->clientIp();
         $cacheKey = "rate_limit_{$clientIp}";
 
-        $config = Configure::read('RateLimit');
-        $rateData = Cache::read($cacheKey, $config['cache'] ?? 'default');
+        $rateData = Cache::read($cacheKey, $this->cache);
 
         if (empty($rateData)) {
             $rateData = [
@@ -93,7 +106,7 @@ class RateLimitMiddleware implements MiddlewareInterface
             }
         }
 
-        Cache::write($cacheKey, $rateData, $config['cache'] ?? 'default');
+        Cache::write($cacheKey, $rateData, $this->cache);
 
         if ($rateData['count'] > $this->limit) {
             throw new TooManyRequestsException();
