@@ -86,4 +86,13 @@ class RedirectComponent extends Component
     {
         return $this->getConfig('enable', false);
     }
+
+    /**
+     * @param bool $enable Enable or disable the redirect.
+     * @return void
+     */
+    public function enable(bool $enable = true): void
+    {
+        $this->setConfig('enable', $enable);
+    }
 }
