@@ -41,15 +41,15 @@ class UtilityKitPlugin extends BasePlugin
     public function routes(RouteBuilder $routes): void
     {
         // remove this method hook if you don't need it
-        $routes->plugin(
-            'UtilityKit',
-            ['path' => '/utility-kit'],
-            function (RouteBuilder $builder) {
-                // Add custom routes here
-
-                $builder->fallbacks();
-            }
-        );
+        //$routes->plugin(
+        //    'UtilityKit',
+        //    ['path' => '/utility-kit'],
+        //    function (RouteBuilder $builder) {
+        //        // Add custom routes here
+        //
+        //        $builder->fallbacks();
+        //    }
+        //);
         parent::routes($routes);
     }
 

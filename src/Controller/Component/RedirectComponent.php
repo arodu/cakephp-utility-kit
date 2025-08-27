@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace UtilityKit\Controller\Component;
 
 use Cake\Controller\Component;
-use Cake\Core\Configure;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\Routing\Router;
-use Cake\Utility\Hash;
 
 /**
  * Redirect component
@@ -26,12 +24,6 @@ class RedirectComponent extends Component
         'key' => 'redirect',
         'enable' => true,
     ];
-
-    public function initialize(array $config): void
-    {
-        $config = Hash::merge(Configure::read('BootstrapTools.redirect', []), $config);
-        $this->setConfig($config);
-    }
 
     /**
      * @param EventInterface $event

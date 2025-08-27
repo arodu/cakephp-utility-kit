@@ -21,20 +21,22 @@ use UtilityKit\Http\Exception\TooManyRequestsException;
  * 
  * Usage:
  * In your application, you can add this middleware to your middleware stack:
- * * ```php
- * * $middlewareQueue->add(new \UtilityKit\Middleware\RateLimitMiddleware([
- * * *     'limit' => 1000, // Maximum requests allowed
- * * *     'period' => 3600, // Time period in seconds (default is 1 hour)
- * * * ]));
- * 
- * * Configuration:
- * * You can also configure the default limit and period in your application configuration:
- * * * ```php
- * * * Configure::write('RateLimit', [
- * * * *     'limit' => 1000, // Default maximum requests allowed
- * * * *     'period' => 3600, // Default time period in seconds (default is 1 hour)
- * * * *     'cache' => 'default', // Cache configuration to use
- * * * ]);
+ * ```php
+ *   middlewareQueue->add(new \UtilityKit\Middleware\RateLimitMiddleware([
+ *          'limit' => 1000, // Maximum requests allowed
+ *          'period' => 3600, // Time period in seconds (default is 1 hour)
+ *   ]));
+ * ```
+ *
+ * Configuration:
+ * You can also configure the default limit and period in your application configuration:
+ * ```php
+ * Configure::write('RateLimit', [
+ *     'limit' => 1000, // Default maximum requests allowed
+ *     'period' => 3600, // Default time period in seconds (default is 1 hour)
+ *     'cache' => 'default', // Cache configuration to use
+ * ]);
+ * ```
  */
 class RateLimitMiddleware implements MiddlewareInterface
 {

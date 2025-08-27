@@ -26,7 +26,7 @@ trait RegisterScopeDataTrait
      * @param string|null $scope
      * @return self
      */
-    public function setScopeData(mixed $data, string $scope = null): self
+    public function setScopeData(mixed $data, ?string $scope = null): self
     {
         $scope = $this->getScopeName($scope);
         $this->scopeItems[$scope][] = $data;
@@ -38,7 +38,7 @@ trait RegisterScopeDataTrait
      * @param string|null $scope
      * @return mixed
      */
-    public function getScopeData(string $scope = null): mixed
+    public function getScopeData(?string $scope = null): mixed
     {
         $scope = $this->getScopeName($scope);
 
@@ -87,7 +87,7 @@ trait RegisterScopeDataTrait
      * @param string|null $scope
      * @return string
      */
-    protected function getScopeName(string $scope = null): string
+    protected function getScopeName(?string $scope = null): string
     {
         return $scope ?? $this->currentScope ?? $this->defaultScope;
     }

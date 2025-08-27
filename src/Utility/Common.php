@@ -40,7 +40,8 @@ final class Common
 
     /**
      * Get the copyright year string.
-     * * @param int $startYear The starting year.
+     * 
+     * @param int $startYear The starting year.
      * @return string
      */
     public static function getCopyrightYear(int $startYear): string
@@ -56,7 +57,8 @@ final class Common
 
     /**
      * Get the version from composer.lock for a given package.
-     * * @param string $packageName The name of the package.
+     * 
+     * @param string $packageName The name of the package.
      * @return string|null The package version or null if not found.
      */
     public static function getPackageVersion(string $packageName): ?string
