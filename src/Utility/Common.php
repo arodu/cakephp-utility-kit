@@ -6,6 +6,8 @@ namespace UtilityKit\Utility;
 
 /**
  * Common utility functions.
+ * 
+ * @deprecated
  */
 final class Common
 {
@@ -44,15 +46,13 @@ final class Common
      * @param int $startYear The starting year.
      * @return string
      */
-    public static function getCopyrightYear(int $startYear): string
+    public static function getCopyrightYear(int $startYear, string $format = '%s-%s'): string
     {
         $currentYear = (int) date('Y');
 
-        if ($startYear === $currentYear) {
-            return (string) $currentYear;
-        }
-
-        return $startYear . ' - ' . $currentYear;
+        return $startYear < $currentYear
+            ? sprintf($format, $startYear, $currentYear)
+            : (string) $startYear;
     }
 
     /**
