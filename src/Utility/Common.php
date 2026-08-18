@@ -1,12 +1,11 @@
 <?php
-
 declare(strict_types=1);
 
 namespace UtilityKit\Utility;
 
 /**
  * Common utility functions.
- * 
+ *
  * @deprecated
  */
 final class Common
@@ -42,22 +41,22 @@ final class Common
 
     /**
      * Get the copyright year string.
-     * 
+     *
      * @param int $startYear The starting year.
      * @return string
      */
     public static function getCopyrightYear(int $startYear, string $format = '%s-%s'): string
     {
-        $currentYear = (int) date('Y');
+        $currentYear = (int)date('Y');
 
         return $startYear < $currentYear
             ? sprintf($format, $startYear, $currentYear)
-            : (string) $startYear;
+            : (string)$startYear;
     }
 
     /**
      * Get the version from composer.lock for a given package.
-     * 
+     *
      * @param string $packageName The name of the package.
      * @return string|null The package version or null if not found.
      */

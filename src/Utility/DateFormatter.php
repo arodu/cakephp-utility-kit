@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace UtilityKit\Utility;
@@ -11,10 +10,10 @@ final class DateFormatter
      */
     public static function copyrightRange(int $startYear, string $format = '%s-%s'): string
     {
-        $currentYear = (int) date('Y');
+        $currentYear = (int)date('Y');
 
         return $startYear < $currentYear
             ? sprintf($format, $startYear, $currentYear)
-            : (string) $startYear;
+            : (string)$startYear;
     }
 }

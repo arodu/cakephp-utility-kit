@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace UtilityKit\Middleware;
@@ -14,11 +13,13 @@ use UtilityKit\Http\Exception\TooManyRequestsException;
 
 /**
  * RateLimit middleware
- * 
+ *
+ * @deprecated Use \Cake\Http\Middleware\RateLimitMiddleware instead.
+ *
  * This middleware limits the number of requests a client can make in a given time period.
  * It uses the client's IP address to track the number of requests.
  * If the limit is exceeded, it throws a TooManyRequestsException.
- * 
+ *
  * Usage:
  * In your application, you can add this middleware to your middleware stack:
  * ```php
@@ -40,18 +41,17 @@ use UtilityKit\Http\Exception\TooManyRequestsException;
  */
 class RateLimitMiddleware implements MiddlewareInterface
 {
-
     /**
      * Max limit of requests per period.
      *
-     * @var integer
+     * @var int
      */
     protected int $limit;
 
     /**
      * Time period in seconds for the rate limit.
      *
-     * @var integer
+     * @var int
      */
     protected int $period;
 
@@ -64,7 +64,7 @@ class RateLimitMiddleware implements MiddlewareInterface
 
     /**
      *  Constructor.
-     * 
+     *
      * @param array $options Options for the rate limit.
      * * Options can include:
      * * - `limit`: Maximum number of requests allowed (default is 1000).
@@ -100,7 +100,7 @@ class RateLimitMiddleware implements MiddlewareInterface
                 'timestamp' => time(),
             ];
         } else {
-            if ((time() - $rateData['timestamp']) > $this->period) {
+            if (time() - $rateData['timestamp'] > $this->period) {
                 $rateData['count'] = 1;
                 $rateData['timestamp'] = time();
             } else {
