@@ -6,7 +6,6 @@ namespace UtilityKit\Controller\Component;
 use Cake\Controller\Component;
 use Cake\Event\EventInterface;
 use Cake\Http\Exception\BadRequestException;
-use UtilityKit\Controller\Component\AjaxHandlerTrait;
 
 /**
  * AjaxComponent component

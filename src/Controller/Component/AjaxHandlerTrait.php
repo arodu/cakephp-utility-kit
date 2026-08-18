@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace UtilityKit\Controller\Component;
 
-use Cake\Controller\Component;
-
 /**
  * Trait providing common logic for handling controller actions.
  *

@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace UtilityKit\Trait;
@@ -69,10 +68,10 @@ trait RegisterScopeDataTrait
 
     /**
      * @param string $scope
-     * @param boolean $overwrite
+     * @param bool $overwrite
      * @return self
      */
-    public function withScope(string $scope, bool $overwrite = false)
+    public function withScope(string $scope, bool $overwrite = false): self
     {
         if ($overwrite) {
             $this->deleteScopeData($scope);

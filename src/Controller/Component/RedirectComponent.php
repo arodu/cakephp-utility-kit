@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace UtilityKit\Controller\Component;
@@ -26,7 +25,7 @@ class RedirectComponent extends Component
     ];
 
     /**
-     * @param EventInterface $event
+     * @param \Cake\Event\EventInterface $event
      * @return void
      */
     public function beforeRender(EventInterface $event): void
@@ -41,12 +40,12 @@ class RedirectComponent extends Component
     }
 
     /**
-     * @param EventInterface $event
+     * @param \Cake\Event\EventInterface $event
      * @param mixed $url
-     * @param Response $response
+     * @param \Cake\Http\Response $response
      * @return void
      */
-    public function beforeRedirect(EventInterface $event, $url, Response $response): void
+    public function beforeRedirect(EventInterface $event, mixed $url, Response $response): void
     {
         if (!$this->isRedirectEnabled()) {
             return;
@@ -60,7 +59,7 @@ class RedirectComponent extends Component
     }
 
     /**
-     * @param ServerRequest $request
+     * @param \Cake\Http\ServerRequest $request
      * @param array $config
      * @return string|null
      */
@@ -72,7 +71,7 @@ class RedirectComponent extends Component
     }
 
     /**
-     * @return boolean
+     * @return bool
      */
     public function isRedirectEnabled(): bool
     {
