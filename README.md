@@ -1,7 +1,6 @@
 # UtilityKit plugin for CakePHP
 
-Reusable utilities for CakePHP 5, used across the `arodu` plugin chain
-(`cakephp-bootstrap-tools` and `cakelte`).
+Reusable utilities for CakePHP 5.
 
 ## Requirements
 
