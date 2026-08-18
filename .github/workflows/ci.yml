@@ -39,7 +39,7 @@ jobs:
 
       - name: Run PHPUnit
         env:
-          DB_URL: sqlite:///:memory:
+          DB_URL: 'sqlite:///:memory:'
         run: vendor/bin/phpunit
 
   cs:
