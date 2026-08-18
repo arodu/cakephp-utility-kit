@@ -14,7 +14,9 @@ use UtilityKit\Http\Exception\TooManyRequestsException;
 
 /**
  * RateLimit middleware
- * 
+ *
+ * @deprecated Use \Cake\Http\Middleware\RateLimitMiddleware instead.
+ *
  * This middleware limits the number of requests a client can make in a given time period.
  * It uses the client's IP address to track the number of requests.
  * If the limit is exceeded, it throws a TooManyRequestsException.

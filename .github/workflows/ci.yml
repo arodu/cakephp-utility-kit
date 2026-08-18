@@ -45,13 +45,6 @@ jobs:
   cs:
     name: Coding Standard
     runs-on: ubuntu-latest
-    # Informational: no bloquea el merge (el código de producción de 1.next
-    # tiene deuda CS previa). El gate real de CI son los tests.
-    continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        php-version: ['8.1']
 
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +52,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-version }}
+          php-version: '8.4'
           extensions: mbstring, intl, apcu
           coverage: none
 
@@ -71,7 +64,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('composer.json') }}-${{ matrix.php-version }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.json') }}-8.4
 
       - name: Composer install
         run: composer install --prefer-dist --no-progress
