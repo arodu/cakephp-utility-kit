@@ -6,3 +6,10 @@
 /config/Migrations/schema-dump-default.lock
 /vendor/
 /.idea/
+/.phpunit.cache/
+
+# Local: config de opencode y workbench (no versionado)
+/AGENTS.md
+/opencode.json
+/workbench/
+/workbench/docs/
